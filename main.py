@@ -1,5 +1,6 @@
 from datetime import datetime
 import re
+import os
 import numpy as np
 from astropy.io import fits
 import matplotlib.pyplot as plt
@@ -129,15 +130,34 @@ def shr_to_csv(file_name: str):
         with open(new_file_name, "w", newline="") as csvfile:
             csvwriter = csv.writer(csvfile, delimiter=",")
             csvwriter.writerow(["Sweep Number"] + csv_shr_sweep_keys + [shr_header['firstBinFreqHz'] + i * shr_header['binSizeHz'] for i in range(len(shr_sweeps[0]))])
-            for row in tqdm(range(len(shr_sweep_headers)), desc="Progress"):
+            for row in tqdm(range(len(shr_sweep_headers)), desc=f"Progress {file_name}"):
                 csvwriter.writerow(
                     [row + 1]
                     + [shr_sweep_headers[row][key] for key in csv_shr_sweep_keys]+list(shr_sweeps[row])
                 )
 
 
+def convert_directory(dirpath:str, function:callable, *args):
+# traverse root directory, and list directories as dirs and files as files
+    for root, dirs, files in os.walk(dirpath):
+        path = root.split(os.sep)
+        # print((len(path) - 1) * '---', os.path.basename(root))
+        for file in files:
+            # print(len(path) * '---', file)
+            full_path = os.path.join(root,file) 
+            if file.endswith('.shr'):
+                try:
+                    print(f"Processing {full_path}")
+                    function(full_path, *args)
+                except Exception as ex:
+                    print(f'Error processing file {file}: {ex}')
+
+
+
 def main():
-    shr_to_csv("example.shr")
+    convert_directory('test', shr_to_csv)
+    # convert_directory('test', shr_to_fits, True)
+    # shr_to_csv("example.shr")
     # fits_plot("example.fits")
 
 
