@@ -9,7 +9,8 @@ from matplotlib.colors import LogNorm
 from shr_file_header import read_shr_header
 from shr_sweep_header import read_shr_sweep_headers
 from shr_sweep_data import read_shr_sweeps
-
+import csv
+from tqdm import tqdm
 
 def shr_plot(file_name: str):
     with open(file_name, "rb") as file:
@@ -64,7 +65,7 @@ def shr_to_fits(file_name: str, compress: bool = True):
     with open(file_name, "rb") as file:
         # read file
         shr_header = read_shr_header(file)
-        shr_sweep_headers = read_shr_sweep_headers(file, shr_header)
+        # shr_sweep_headers = read_shr_sweep_headers(file, shr_header)
         shr_sweeps = read_shr_sweeps(file, shr_header)
 
         data = np.array(shr_sweeps)
@@ -104,9 +105,40 @@ def fits_plot(file_name: str):
         plt.show()
 
 
+def shr_to_csv(file_name: str):
+    with open(file_name, "rb") as file:
+        shr_header = read_shr_header(file)
+        shr_sweep_headers = read_shr_sweep_headers(file, shr_header)
+        shr_sweeps = read_shr_sweeps(file, shr_header)
+
+        # shr file header
+        new_file_name = ".".join(file_name.split(".")[:-1]) + "_header.csv"
+        csv_shr_header_keys = shr_header.keys()
+        shr_header_data = [shr_header[key] for key in csv_shr_header_keys]
+        with open(new_file_name, "w", newline="") as csvfile:
+            csvwriter = csv.writer(csvfile, delimiter=",")
+            csvwriter.writerow(csv_shr_header_keys)
+            csvwriter.writerow(shr_header_data)
+
+        # shr sweeps
+        new_file_name = ".".join(file_name.split(".")[:-1]) + "_sweep.csv"
+        csv_shr_sweep_keys = list(shr_sweep_headers[0].keys())
+        csv_shr_sweep_keys = [
+            key for key in csv_shr_sweep_keys if not "reserved" in key
+        ]
+        with open(new_file_name, "w", newline="") as csvfile:
+            csvwriter = csv.writer(csvfile, delimiter=",")
+            csvwriter.writerow(["Sweep Number"] + csv_shr_sweep_keys + [shr_header['firstBinFreqHz'] + i * shr_header['binSizeHz'] for i in range(len(shr_sweeps[0]))])
+            for row in tqdm(range(len(shr_sweep_headers)), desc="Progress"):
+                csvwriter.writerow(
+                    [row + 1]
+                    + [shr_sweep_headers[row][key] for key in csv_shr_sweep_keys]+list(shr_sweeps[row])
+                )
+
+
 def main():
-    shr_to_fits("example.shr")
-    fits_plot("example.fits")
+    shr_to_csv("example.shr")
+    # fits_plot("example.fits")
 
 
 if __name__ == "__main__":
