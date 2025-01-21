@@ -69,6 +69,11 @@ def shr_to_fits(file_name: str, compress: bool = True):
         # shr_sweep_headers = read_shr_sweep_headers(file, shr_header)
         shr_sweeps = read_shr_sweeps(file, shr_header)
 
+        if shr_header['sweepLength'] == 0:
+            print(f'File {file_name} does not contain sweep data.')
+            return
+
+
         data = np.array(shr_sweeps)
         # Create a PrimaryHDU object
         hdu = fits.PrimaryHDU(data if not compress else None)
@@ -112,6 +117,9 @@ def shr_to_csv(file_name: str):
         shr_sweep_headers = read_shr_sweep_headers(file, shr_header)
         shr_sweeps = read_shr_sweeps(file, shr_header)
 
+        if shr_header['sweepLength'] == 0:
+            print(f'File {file_name} does not contain sweep data.')
+            return
         # shr file header
         new_file_name = ".".join(file_name.split(".")[:-1]) + "_header.csv"
         csv_shr_header_keys = shr_header.keys()
@@ -155,9 +163,9 @@ def convert_directory(dirpath:str, function:callable, *args):
 
 
 def main():
-    convert_directory('test', shr_to_csv)
+    # convert_directory('test', shr_to_csv)
     # convert_directory('test', shr_to_fits, True)
-    # shr_to_csv("example.shr")
+    shr_to_csv("test/example.shr")
     # fits_plot("example.fits")
 
 
